@@ -17,7 +17,8 @@ let package = Package(
             ],
             path: "Sources/MDViewer",
             resources: [
-                .copy("Resources/mermaid.min.js")
+                .copy("Resources/mermaid.min.js"),
+                .copy("Resources/AppIcon.icns")
             ]
         )
     ]
