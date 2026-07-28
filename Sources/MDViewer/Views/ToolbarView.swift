@@ -3,6 +3,7 @@ import SwiftUI
 struct ToolbarView: ToolbarContent {
     let onOpenFile: () -> Void
     let onReload: () -> Void
+    let onExportPDF: () -> Void
     let hasFile: Bool
 
     var body: some ToolbarContent {
@@ -16,6 +17,12 @@ struct ToolbarView: ToolbarContent {
                 Label("Reload", systemImage: "arrow.clockwise")
             }
             .help("Reload file")
+            .disabled(!hasFile)
+
+            Button(action: onExportPDF) {
+                Label("Export PDF", systemImage: "arrow.down.doc")
+            }
+            .help("Export to PDF")
             .disabled(!hasFile)
         }
     }

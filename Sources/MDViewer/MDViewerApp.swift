@@ -13,6 +13,13 @@ struct MDViewerApp: App {
                 }
                 .keyboardShortcut("o", modifiers: .command)
             }
+
+            CommandGroup(after: .newItem) {
+                Button("Export to PDF...") {
+                    NotificationCenter.default.post(name: .exportPDF, object: nil)
+                }
+                .keyboardShortcut("e", modifiers: [.command, .shift])
+            }
         }
     }
 }

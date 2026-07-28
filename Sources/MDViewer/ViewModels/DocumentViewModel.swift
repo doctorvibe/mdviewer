@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import AppKit
 
 @MainActor
 final class DocumentViewModel: ObservableObject {
@@ -9,6 +10,7 @@ final class DocumentViewModel: ObservableObject {
     @Published var tabContents: [UUID: String] = [:]
     @Published var errorMessage: String?
     @Published var isFilePickerPresented: Bool = false
+    @Published var isExporting: Bool = false
 
     private var fileWatchers: [UUID: FileWatcher] = [:]
     private var cancellables = Set<AnyCancellable>()
@@ -140,5 +142,13 @@ final class DocumentViewModel: ObservableObject {
 
     var hasOpenTabs: Bool {
         !tabs.isEmpty
+    }
+
+    var currentTabBaseName: String {
+        guard let tabId = selectedTabId,
+              let tab = tabs.first(where: { $0.id == tabId }) else {
+            return "document"
+        }
+        return URL(fileURLWithPath: tab.fileName).deletingPathExtension().lastPathComponent
     }
 }

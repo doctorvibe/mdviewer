@@ -30,6 +30,7 @@ struct ContentView: View {
             ToolbarView(
                 onOpenFile: { viewModel.isFilePickerPresented = true },
                 onReload: { viewModel.reloadCurrentTab() },
+                onExportPDF: { exportToPDF() },
                 hasFile: viewModel.hasOpenTabs
             )
         }
@@ -42,6 +43,9 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .openFile)) { _ in
             viewModel.isFilePickerPresented = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .exportPDF)) { _ in
+            exportToPDF()
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
@@ -60,8 +64,17 @@ struct ContentView: View {
             viewModel.errorMessage = error.localizedDescription
         }
     }
+
+    private func exportToPDF() {
+        guard viewModel.hasOpenTabs else { return }
+        PDFExportService.exportToPDF(
+            markdownContent: viewModel.currentContent,
+            suggestedName: viewModel.currentTabBaseName
+        )
+    }
 }
 
 extension Notification.Name {
     static let openFile = Notification.Name("openFile")
+    static let exportPDF = Notification.Name("exportPDF")
 }
