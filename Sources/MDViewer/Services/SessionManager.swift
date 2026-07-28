@@ -4,6 +4,7 @@ final class SessionManager {
     private let userDefaults = UserDefaults.standard
     private let tabsKey = "savedTabs"
     private let selectedTabKey = "selectedTabId"
+    private let zoomKey = "zoomLevel"
 
     static let shared = SessionManager()
 
@@ -31,6 +32,16 @@ final class SessionManager {
         let selectedId = selectedIdString.flatMap { UUID(uuidString: $0) }
 
         return (tabs, selectedId)
+    }
+
+    func saveZoom(_ zoom: Double) {
+        userDefaults.set(zoom, forKey: zoomKey)
+    }
+
+    func loadZoom() -> Double {
+        let stored = userDefaults.double(forKey: zoomKey)
+        // `double(forKey:)` returns 0 when nothing is stored.
+        return stored > 0 ? stored : 1.0
     }
 
     func clearSession() {

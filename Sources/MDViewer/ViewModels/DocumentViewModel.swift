@@ -11,6 +11,10 @@ final class DocumentViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var isFilePickerPresented: Bool = false
     @Published var isExporting: Bool = false
+    @Published var zoomLevel: Double = SessionManager.shared.loadZoom()
+
+    /// Discrete steps, so repeated zooming lands on predictable sizes.
+    private static let zoomSteps: [Double] = [0.5, 0.67, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0]
 
     private var fileWatchers: [UUID: FileWatcher] = [:]
     private var cancellables = Set<AnyCancellable>()
@@ -142,6 +146,38 @@ final class DocumentViewModel: ObservableObject {
 
     var hasOpenTabs: Bool {
         !tabs.isEmpty
+    }
+
+    var canZoomIn: Bool {
+        zoomLevel < (Self.zoomSteps.last ?? 1)
+    }
+
+    var canZoomOut: Bool {
+        zoomLevel > (Self.zoomSteps.first ?? 1)
+    }
+
+    /// Percentage shown in the toolbar, e.g. "125%".
+    var zoomDescription: String {
+        "\(Int((zoomLevel * 100).rounded()))%"
+    }
+
+    func zoomIn() {
+        guard let next = Self.zoomSteps.first(where: { $0 > zoomLevel + 0.001 }) else { return }
+        setZoom(next)
+    }
+
+    func zoomOut() {
+        guard let previous = Self.zoomSteps.last(where: { $0 < zoomLevel - 0.001 }) else { return }
+        setZoom(previous)
+    }
+
+    func resetZoom() {
+        setZoom(1.0)
+    }
+
+    private func setZoom(_ value: Double) {
+        zoomLevel = value
+        sessionManager.saveZoom(value)
     }
 
     var currentTabBaseName: String {

@@ -18,7 +18,7 @@ struct ContentView: View {
 
             Group {
                 if viewModel.hasOpenTabs {
-                    MarkdownContentView(content: viewModel.currentContent)
+                    MarkdownContentView(content: viewModel.currentContent, zoom: viewModel.zoomLevel)
                 } else {
                     EmptyStateView(onOpenFile: { viewModel.isFilePickerPresented = true })
                 }
@@ -31,6 +31,12 @@ struct ContentView: View {
                 onOpenFile: { viewModel.isFilePickerPresented = true },
                 onReload: { viewModel.reloadCurrentTab() },
                 onExportPDF: { exportToPDF() },
+                onZoomIn: { viewModel.zoomIn() },
+                onZoomOut: { viewModel.zoomOut() },
+                onResetZoom: { viewModel.resetZoom() },
+                zoomDescription: viewModel.zoomDescription,
+                canZoomIn: viewModel.canZoomIn,
+                canZoomOut: viewModel.canZoomOut,
                 hasFile: viewModel.hasOpenTabs
             )
         }
@@ -46,6 +52,15 @@ struct ContentView: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: .exportPDF)) { _ in
             exportToPDF()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .zoomIn)) { _ in
+            viewModel.zoomIn()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .zoomOut)) { _ in
+            viewModel.zoomOut()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .resetZoom)) { _ in
+            viewModel.resetZoom()
         }
         .alert("Error", isPresented: .constant(viewModel.errorMessage != nil)) {
             Button("OK") { viewModel.errorMessage = nil }
@@ -77,4 +92,7 @@ struct ContentView: View {
 extension Notification.Name {
     static let openFile = Notification.Name("openFile")
     static let exportPDF = Notification.Name("exportPDF")
+    static let zoomIn = Notification.Name("zoomIn")
+    static let zoomOut = Notification.Name("zoomOut")
+    static let resetZoom = Notification.Name("resetZoom")
 }

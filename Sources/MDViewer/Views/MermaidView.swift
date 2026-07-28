@@ -25,10 +25,15 @@ private enum MermaidShell {
             display: flex;
             justify-content: center;
             padding: 8px 0;
+            overflow-x: auto;
         }
-        /* Mermaid writes an inline max-width, so !important is needed to fit the view. */
+        /*
+         * Mermaid writes an inline max-width, so !important is needed to fit the view.
+         * Multiplying by --zoom lets a diagram grow past the view width, at which
+         * point the container above scrolls horizontally.
+         */
         #diagram svg {
-            max-width: 100% !important;
+            max-width: calc(100% * var(--zoom, 1)) !important;
             height: auto;
         }
         #error {
@@ -38,7 +43,7 @@ private enum MermaidShell {
             box-sizing: border-box;
             border-radius: 6px;
             font-family: SFMono-Regular, Menlo, monospace;
-            font-size: 12px;
+            font-size: calc(12px * var(--zoom, 1));
             line-height: 1.45;
             white-space: pre-wrap;
         }
@@ -48,6 +53,11 @@ private enum MermaidShell {
     <div id="diagram"></div>
     <script>
     let sequence = 0;
+
+    function setZoom(zoom) {
+        document.documentElement.style.setProperty('--zoom', zoom);
+        requestAnimationFrame(reportHeight);
+    }
 
     async function renderDiagram(source, theme, errorColor, errorBackground) {
         const container = document.getElementById('diagram');
@@ -93,6 +103,7 @@ private enum MermaidShell {
 /// are reported inside the web view by the shell itself.
 struct MermaidView: View {
     let source: String
+    var zoom: Double = 1.0
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var height: CGFloat = 80
@@ -104,6 +115,7 @@ struct MermaidView: View {
                 shellURL: shellURL,
                 directory: directory,
                 isDark: colorScheme == .dark,
+                zoom: zoom,
                 height: $height
             )
             .frame(height: height)
@@ -134,6 +146,7 @@ private struct MermaidWebView: NSViewRepresentable {
     let shellURL: URL
     let directory: URL
     let isDark: Bool
+    let zoom: Double
     @Binding var height: CGFloat
 
     func makeCoordinator() -> Coordinator {
@@ -153,6 +166,7 @@ private struct MermaidWebView: NSViewRepresentable {
     }
 
     func updateNSView(_ webView: WKWebView, context: Context) {
+        context.coordinator.applyZoom(zoom, to: webView)
         context.coordinator.render(source: source, isDark: isDark, in: webView)
     }
 
@@ -165,9 +179,17 @@ private struct MermaidWebView: NSViewRepresentable {
         private var isLoaded = false
         private var rendered: (source: String, isDark: Bool)?
         private var pending: (source: String, isDark: Bool)?
+        private var zoom: Double = 1
 
         init(height: Binding<CGFloat>) {
             self.height = height
+        }
+
+        func applyZoom(_ newZoom: Double, to webView: WKWebView) {
+            guard abs(newZoom - zoom) > 0.001 else { return }
+            zoom = newZoom
+            guard isLoaded else { return }
+            webView.evaluateJavaScript("setZoom(\(newZoom));")
         }
 
         func render(source: String, isDark: Bool, in webView: WKWebView) {
@@ -190,6 +212,8 @@ private struct MermaidWebView: NSViewRepresentable {
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             isLoaded = true
+            // Zoom arrives before the page is ready when a diagram first appears.
+            webView.evaluateJavaScript("setZoom(\(zoom));")
             if let pending {
                 render(source: pending.source, isDark: pending.isDark, in: webView)
             }
