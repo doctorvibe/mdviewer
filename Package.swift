@@ -15,7 +15,10 @@ let package = Package(
             dependencies: [
                 .product(name: "MarkdownUI", package: "swift-markdown-ui")
             ],
-            path: "Sources/MDViewer"
+            path: "Sources/MDViewer",
+            resources: [
+                .copy("Resources/mermaid.min.js")
+            ]
         )
     ]
 )
